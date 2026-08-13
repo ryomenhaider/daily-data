@@ -6,23 +6,22 @@ from src.features.market import (
 
 
 def test_crypto_features():
+
     data = {
         "coins": {
-            "bitcoin": {
+            "btc": {
                 "symbol": "BTC",
-                "price_usd": 100,
-                "market_cap_usd": 1_000,
+                "market_cap_usd": 1000,
                 "volume_24h_usd": 100,
                 "change_24h_pct": 5,
                 "change_7d_pct": 10,
             },
-            "ethereum": {
+            "eth": {
                 "symbol": "ETH",
-                "price_usd": 50,
                 "market_cap_usd": 500,
                 "volume_24h_usd": 50,
-                "change_24h_pct": -1,
-                "change_7d_pct": 2,
+                "change_24h_pct": -2,
+                "change_7d_pct": 3,
             },
         }
     }
@@ -30,38 +29,67 @@ def test_crypto_features():
     result = crypto_features(data)
 
     assert result["asset_count"] == 2
+    assert result["total_market_cap_usd"] == 1500
+    assert result["total_volume_24h_usd"] == 150
     assert result["best_24h_asset"] == "BTC"
     assert result["worst_24h_asset"] == "ETH"
-    assert result["total_market_cap_usd"] == 1500
 
 
-def test_forex_features():
+def test_forex_features_dict():
+
     data = {
         "rates": {
-            "EUR": 0.85,
-            "GBP": 0.74,
-            "PKR": 280,
+            "EUR": 0.9,
+            "GBP": 0.8,
+            "JPY": 150,
         }
     }
 
     result = forex_features(data)
 
     assert result["currency_count"] == 3
-    assert result["min_usd_rate"] == 0.74
+    assert result["min_usd_rate"] == 0.8
+    assert result["max_usd_rate"] == 150
+    assert result["mean_usd_rate"] == (
+        (0.9 + 0.8 + 150) / 3
+    )
+
+
+def test_forex_features_list():
+
+    data = {
+        "rates": [
+            {
+                "currency": "EUR",
+                "rate": 0.9,
+            },
+            {
+                "currency": "GBP",
+                "rate": 0.8,
+            },
+            {
+                "currency": "JPY",
+                "rate": 150,
+            },
+        ]
+    }
+
+    result = forex_features(data)
+
+    assert result["currency_count"] == 3
+    assert result["min_usd_rate"] == 0.8
+    assert result["max_usd_rate"] == 150
 
 
 def test_weather_features():
+
     data = {
         "locations": {
-            "lahore": {
-                "current": {
-                    "temperature_2m": 30,
-                }
+            "A": {
+                "temperature_c": 20,
             },
-            "islamabad": {
-                "current": {
-                    "temperature_2m": 25,
-                }
+            "B": {
+                "temperature_c": 30,
             },
         }
     }
@@ -69,4 +97,6 @@ def test_weather_features():
     result = weather_features(data)
 
     assert result["location_count"] == 2
-    assert result["mean_temperature_c"] == 27.5
+    assert result["mean_temperature_c"] == 25
+    assert result["min_temperature_c"] == 20
+    assert result["max_temperature_c"] == 30
