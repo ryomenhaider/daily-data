@@ -24,31 +24,52 @@ concurrency:
 
 jobs:
   pipeline:
+    name: Collect and publish intelligence
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+
+      # ============================================================
+      # CHECKOUT
+      # ============================================================
+
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      # ============================================================
+      # PYTHON
+      # ============================================================
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: pip
+
+      # ============================================================
+      # PYTHON PATH
+      # ============================================================
 
       - name: Configure Python path
         run: |
           echo "PYTHONPATH=${GITHUB_WORKSPACE}" >> "$GITHUB_ENV"
+
+      # ============================================================
+      # GIT
+      # ============================================================
 
       - name: Configure Git
         run: |
           git config user.name "rankistan-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Generate run ID
+      # ============================================================
+      # GENERATE UNIQUE RUN ID
+      # ============================================================
+
+      - name: Generate run identifiers
         id: run
         run: |
           RUN_ID="$(date -u '+%Y-%m-%d-%H-%M-%S')"
@@ -57,39 +78,98 @@ jobs:
           echo "run_id=${RUN_ID}" >> "$GITHUB_OUTPUT"
           echo "branch=${BRANCH}" >> "$GITHUB_OUTPUT"
 
-          echo "RUN_ID=${RUN_ID}"
-          echo "BRANCH=${BRANCH}"
+          echo "=========================================="
+          echo "RUN ID: ${RUN_ID}"
+          echo "BRANCH: ${BRANCH}"
+          echo "=========================================="
+
+      # ============================================================
+      # CREATE BRANCH
+      # ============================================================
 
       - name: Create run branch
         run: |
           git checkout -b "${{ steps.run.outputs.branch }}"
 
+      # ============================================================
+      # INSTALL DEPENDENCIES
+      # ============================================================
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          python -m pip install -r requirements.txt
 
-      - name: Run tests
+      # ============================================================
+      # VERIFY DEPENDENCIES
+      # ============================================================
+
+      - name: Verify Python environment
+        run: |
+          python --version
+          python -c "import requests; print('requests:', requests.__version__)"
+          python -c "import pytest; print('pytest:', pytest.__version__)"
+          python -c "import src; print('src:', src.__file__)"
+
+      # ============================================================
+      # TESTS BEFORE PIPELINE
+      # ============================================================
+
+      - name: Run tests before pipeline
         run: |
           python -m pytest -q
 
-      - name: Run pipeline
+      # ============================================================
+      # RUN INTELLIGENCE PIPELINE
+      # ============================================================
+
+      - name: Run daily intelligence pipeline
         run: |
           python -m src.daily_pipeline
 
-      - name: Validate generated data
+      # ============================================================
+      # VALIDATE GENERATED OUTPUT
+      # ============================================================
+
+      - name: Validate generated output
         run: |
           python -m pytest -q
 
-      - name: Show commits
-        run: |
-          git log --oneline -15
+      # ============================================================
+      # SHOW GENERATED COMMITS
+      # ============================================================
 
-      - name: Push branch
+      - name: Show generated commits
+        run: |
+          echo "=========================================="
+          echo "GENERATED COMMITS"
+          echo "=========================================="
+
+          git log --oneline -20
+
+          echo ""
+          echo "=========================================="
+          echo "CHANGED FILES"
+          echo "=========================================="
+
+          git status --short
+
+      # ============================================================
+      # PUSH RUN BRANCH
+      # ============================================================
+
+      - name: Push run branch
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git push --set-upstream origin "${{ steps.run.outputs.branch }}"
+          git push \
+            --set-upstream \
+            origin \
+            "${{ steps.run.outputs.branch }}"
+
+      # ============================================================
+      # CREATE PULL REQUEST
+      # ============================================================
 
       - name: Create pull request
         env:
@@ -103,25 +183,50 @@ jobs:
             --base main \
             --head "$BRANCH" \
             --title "data: intelligence pipeline ${RUN_ID}" \
-            --body "Automated intelligence pipeline run ${RUN_ID}.
+            --body "## Automated Intelligence Pipeline
 
-          Sources:
+          **Run ID:** ${RUN_ID}
+
+          ### Data Sources
+
           - CoinPaprika
           - Frankfurter
           - Open-Meteo
           - World Bank
 
-          Generated:
-          - cryptocurrency snapshot
-          - FX snapshot
-          - weather snapshot
-          - macroeconomic snapshot
-          - crypto features
+          ### Generated Data
+
+          - Cryptocurrency snapshot
+          - Foreign exchange snapshot
+          - Weather snapshot
+          - Macroeconomic snapshot
+
+          ### Generated Features
+
+          - Cryptocurrency features
           - FX features
-          - weather features
-          - combined feature set
-          - intelligence report
-          - pipeline metadata"
+          - Weather features
+          - Combined daily feature set
+
+          ### Generated Artifacts
+
+          - Raw datasets
+          - Feature datasets
+          - Intelligence report
+          - Pipeline metadata
+
+          ### Validation
+
+          - Tests executed before collection
+          - API responses validated
+          - Generated data validated
+          - Tests executed after collection
+
+          This PR was generated automatically by GitHub Actions."
+
+      # ============================================================
+      # CREATE DATA QUALITY ISSUE
+      # ============================================================
 
       - name: Create data quality issue
         env:
@@ -132,12 +237,40 @@ jobs:
           gh issue create \
             --repo "${{ github.repository }}" \
             --title "data: quality review ${RUN_ID}" \
-            --body "Automated data quality review for pipeline run ${RUN_ID}.
+            --body "## Daily Data Quality Review
 
-          - [ ] Cryptocurrency data valid
-          - [ ] FX data valid
-          - [ ] Weather data valid
-          - [ ] Macro data valid
+          **Pipeline Run:** ${RUN_ID}
+
+          ### Checks
+
+          - [ ] Cryptocurrency API response valid
+          - [ ] FX API response valid
+          - [ ] Weather API response valid
+          - [ ] World Bank response valid
           - [ ] No unexpected null values
-          - [ ] Features valid
-          - [ ] Report generated"
+          - [ ] Feature calculations valid
+          - [ ] Generated report valid
+          - [ ] Pipeline metadata valid
+
+          ### Sources
+
+          - CoinPaprika
+          - Frankfurter
+          - Open-Meteo
+          - World Bank
+
+          This issue was generated automatically for traceability."
+
+      # ============================================================
+      # SUMMARY
+      # ============================================================
+
+      - name: Pipeline summary
+        run: |
+          echo "=========================================="
+          echo "PIPELINE COMPLETED"
+          echo "=========================================="
+          echo "Run ID: ${{ steps.run.outputs.run_id }}"
+          echo "Branch: ${{ steps.run.outputs.branch }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "=========================================="
