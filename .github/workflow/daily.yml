@@ -1,0 +1,158 @@
+name: Daily Intelligence Pipeline
+
+on:
+  schedule:
+    # 20:00 Pakistan Standard Time (UTC+5)
+    # GitHub Actions schedules are UTC.
+    - cron: "0 15 * * *"
+
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: daily-intelligence-pipeline
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    name: Collect and publish daily data
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "rankistan-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests before pipeline
+        run: |
+          pytest -q
+
+      - name: Run daily pipeline
+        run: |
+          cd src
+          python daily_pipeline.py
+
+      - name: Push daily commits
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          BRANCH="automation/daily/${DATE}"
+
+          git checkout -B "$BRANCH"
+
+          git push \
+            --force-with-lease \
+            origin "$BRANCH"
+
+      - name: Create pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          BRANCH="automation/daily/${DATE}"
+
+          EXISTING=$(gh pr list \
+            --head "$BRANCH" \
+            --base main \
+            --json number \
+            --jq 'length')
+
+          if [ "$EXISTING" -eq 0 ]; then
+            gh pr create \
+              --base main \
+              --head "$BRANCH" \
+              --title "data: daily intelligence snapshot — ${DATE}" \
+              --body "$(cat <<EOF
+          ## Daily Intelligence Pipeline
+
+          Automated data collection for **${DATE}**.
+
+          ### Sources
+
+          - CoinPaprika
+          - Frankfurter
+          - Open-Meteo
+          - World Bank
+
+          ### Generated
+
+          - raw cryptocurrency data
+          - FX snapshot
+          - weather snapshot
+          - macroeconomic snapshot
+          - crypto features
+          - FX features
+          - weather features
+          - combined feature set
+          - daily intelligence report
+          - pipeline metadata
+
+          All data was fetched and validated automatically.
+
+          This PR is intentionally kept separate so the generated daily
+          dataset can be reviewed before merging.
+          EOF
+          )"
+          else
+            echo "PR already exists."
+          fi
+
+      - name: Create data quality issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+
+          EXISTING=$(gh issue list \
+            --search "\"Daily data quality review — ${DATE}\" in:title" \
+            --json number \
+            --jq 'length')
+
+          if [ "$EXISTING" -eq 0 ]; then
+            gh issue create \
+              --title "Daily data quality review — ${DATE}" \
+              --body "$(cat <<EOF
+          # Daily Data Quality Review
+
+          Automated snapshot generated for **${DATE}**.
+
+          ## Review
+
+          - [ ] Cryptocurrency API response valid
+          - [ ] FX response valid
+          - [ ] Weather response valid
+          - [ ] World Bank response valid
+          - [ ] No unexpected null values
+          - [ ] Feature calculations valid
+          - [ ] Report generated successfully
+
+          This issue is generated for traceability of the daily
+          data-engineering pipeline.
+          EOF
+          )"
+          else
+            echo "Issue already exists."
+          fi
