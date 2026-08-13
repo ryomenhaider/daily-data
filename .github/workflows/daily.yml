@@ -1,28 +1,15 @@
 name: Daily Intelligence Pipeline
 
 on:
-
-  # ==============================================================
-  # AUTOMATIC SCHEDULE
-  # ==============================================================
-
   schedule:
-
     # 08:00 PKT
-    # 03:00 UTC
     - cron: "0 3 * * *"
 
     # 14:00 PKT
-    # 09:00 UTC
     - cron: "0 9 * * *"
 
     # 20:00 PKT
-    # 15:00 UTC
     - cron: "0 15 * * *"
-
-  # ==============================================================
-  # MANUAL EXECUTION
-  # ==============================================================
 
   workflow_dispatch:
 
@@ -31,235 +18,100 @@ permissions:
   issues: write
   pull-requests: write
 
-# Prevent two executions from running simultaneously.
 concurrency:
-  group: daily-intelligence-${{ github.ref }}
+  group: daily-intelligence-${{ github.run_id }}
   cancel-in-progress: false
 
-
 jobs:
-
   pipeline:
-
-    name: Run intelligence pipeline
-
     runs-on: ubuntu-latest
 
     steps:
-
-      # ============================================================
-      # CHECKOUT
-      # ============================================================
-
-      - name: Checkout repository
-
+      - name: Checkout
         uses: actions/checkout@v4
-
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-
-      # ============================================================
-      # GIT CONFIG
-      # ============================================================
-
-      - name: Configure Git
-
-        run: |
-
-          git config user.name "rankistan-bot"
-
-          git config user.email \
-            "41898282+github-actions[bot]@users.noreply.github.com"
-
-
-      # ============================================================
-      # CREATE UNIQUE RUN ID
-      # ============================================================
-
-      - name: Generate run identifiers
-
-        id: run
-
-        run: |
-
-          DATE=$(date -u +"%Y-%m-%d")
-
-          TIME=$(date -u +"%H-%M-%S")
-
-          RUN_ID="${DATE}-${TIME}"
-
-          BRANCH="automation/run/${RUN_ID}"
-
-          echo "date=${DATE}" >> "$GITHUB_OUTPUT"
-
-          echo "time=${TIME}" >> "$GITHUB_OUTPUT"
-
-          echo "run_id=${RUN_ID}" >> "$GITHUB_OUTPUT"
-
-          echo "branch=${BRANCH}" >> "$GITHUB_OUTPUT"
-
-          echo "======================================"
-
-          echo "RUN ID:  ${RUN_ID}"
-
-          echo "BRANCH:  ${BRANCH}"
-
-          echo "======================================"
-
-
-      # ============================================================
-      # CREATE UNIQUE BRANCH BEFORE PIPELINE
-      # ============================================================
-
-      - name: Create run branch
-
-        run: |
-
-          git checkout -B \
-            "${{ steps.run.outputs.branch }}"
-
-
-      # ============================================================
-      # PYTHON
-      # ============================================================
-
       - name: Setup Python
-
         uses: actions/setup-python@v5
-
         with:
-
           python-version: "3.12"
-
           cache: pip
 
+      - name: Configure Python path
+        run: |
+          echo "PYTHONPATH=${GITHUB_WORKSPACE}" >> "$GITHUB_ENV"
 
-      # ============================================================
-      # DEPENDENCIES
-      # ============================================================
+      - name: Configure Git
+        run: |
+          git config user.name "rankistan-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Generate run ID
+        id: run
+        run: |
+          RUN_ID="$(date -u '+%Y-%m-%d-%H-%M-%S')"
+          BRANCH="automation/run/${RUN_ID}"
+
+          echo "run_id=${RUN_ID}" >> "$GITHUB_OUTPUT"
+          echo "branch=${BRANCH}" >> "$GITHUB_OUTPUT"
+
+          echo "RUN_ID=${RUN_ID}"
+          echo "BRANCH=${BRANCH}"
+
+      - name: Create run branch
+        run: |
+          git checkout -b "${{ steps.run.outputs.branch }}"
 
       - name: Install dependencies
-
         run: |
-
           python -m pip install --upgrade pip
-
           pip install -r requirements.txt
 
-
-      # ============================================================
-      # TEST BEFORE PIPELINE
-      # ============================================================
-
       - name: Run tests
-
         run: |
+          python -m pytest -q
 
-          pytest -q
-
-
-      # ============================================================
-      # RUN PIPELINE
-      # ============================================================
-
-      - name: Run daily pipeline
-
+      - name: Run pipeline
         run: |
+          python -m src.daily_pipeline
 
-          python src/daily_pipeline.py
-
-
-      # ============================================================
-      # TEST GENERATED DATA
-      # ============================================================
-
-      - name: Validate generated pipeline
-
+      - name: Validate generated data
         run: |
+          python -m pytest -q
 
-          pytest -q
-
-
-      # ============================================================
-      # SHOW COMMITS
-      # ============================================================
-
-      - name: Show generated commits
-
+      - name: Show commits
         run: |
+          git log --oneline -15
 
-          echo "======================================"
-
-          echo "GENERATED COMMITS"
-
-          echo "======================================"
-
-          git log \
-            --oneline \
-            --decorate \
-            -15
-
-
-      # ============================================================
-      # PUSH BRANCH
-      # ============================================================
-
-      - name: Push run branch
-
+      - name: Push branch
         env:
-
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
         run: |
-
-          git push \
-            --set-upstream \
-            origin \
-            "${{ steps.run.outputs.branch }}"
-
-
-      # ============================================================
-      # CREATE PR
-      # ============================================================
+          git push --set-upstream origin "${{ steps.run.outputs.branch }}"
 
       - name: Create pull request
-
         env:
-
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
         run: |
-
+          RUN_ID="${{ steps.run.outputs.run_id }}"
           BRANCH="${{ steps.run.outputs.branch }}"
 
-          RUN_ID="${{ steps.run.outputs.run_id }}"
-
           gh pr create \
-
+            --repo "${{ github.repository }}" \
             --base main \
-
             --head "$BRANCH" \
+            --title "data: intelligence pipeline ${RUN_ID}" \
+            --body "Automated intelligence pipeline run ${RUN_ID}.
 
-            --title \
-            "data: intelligence pipeline ${RUN_ID}" \
-
-            --body "$(cat <<EOF
-
-          ## Automated Intelligence Pipeline
-
-          **Run:** ${RUN_ID}
-
-          ### Data sources
-
+          Sources:
           - CoinPaprika
           - Frankfurter
           - Open-Meteo
           - World Bank
 
-          ### Generated
-
+          Generated:
           - cryptocurrency snapshot
           - FX snapshot
           - weather snapshot
@@ -267,64 +119,25 @@ jobs:
           - crypto features
           - FX features
           - weather features
-          - combined features
+          - combined feature set
           - intelligence report
-          - pipeline metadata
-
-          ### Validation
-
-          - Tests executed before collection
-          - API responses validated
-          - Generated data validated
-          - Tests executed after collection
-
-          EOF
-          )"
-
-
-      # ============================================================
-      # CREATE ISSUE
-      # ============================================================
+          - pipeline metadata"
 
       - name: Create data quality issue
-
         env:
-
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
         run: |
-
           RUN_ID="${{ steps.run.outputs.run_id }}"
 
           gh issue create \
-
-            --title \
-            "data: quality review ${RUN_ID}" \
-
-            --body "$(cat <<EOF
-
-          # Data Quality Review
-
-          Automated pipeline run:
-
-          **${RUN_ID}**
-
-          ## Review
+            --repo "${{ github.repository }}" \
+            --title "data: quality review ${RUN_ID}" \
+            --body "Automated data quality review for pipeline run ${RUN_ID}.
 
           - [ ] Cryptocurrency data valid
           - [ ] FX data valid
           - [ ] Weather data valid
           - [ ] Macro data valid
           - [ ] No unexpected null values
-          - [ ] Feature calculations valid
-          - [ ] Report generated successfully
-
-          ## Sources
-
-          - CoinPaprika
-          - Frankfurter
-          - Open-Meteo
-          - World Bank
-
-          EOF
-          )"
+          - [ ] Features valid
+          - [ ] Report generated"

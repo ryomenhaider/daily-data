@@ -1,55 +1,65 @@
 from __future__ import annotations
 
-from typing import Any
-
-from .base import get_json
+import requests
 
 
-BASE_URL = "https://api.coinpaprika.com/v1"
+URL = "https://api.coinpaprika.com/v1/tickers"
 
 COINS = {
-    "btc-bitcoin": "bitcoin",
-    "eth-ethereum": "ethereum",
-    "sol-solana": "solana",
-    "bnb-binance-coin": "bnb",
-    "xrp-xrp": "xrp",
+    "btc-bitcoin",
+    "eth-ethereum",
+    "sol-solana",
+    "bnb-binance-coin",
+    "xrp-xrp",
+    "ada-cardano",
+    "doge-dogecoin",
+    "avax-avalanche",
+    "dot-polkadot",
+    "link-chainlink",
 }
 
 
-def fetch_crypto() -> dict[str, Any]:
-    result: dict[str, Any] = {
-        "source": "coinpaprika",
-        "coins": {},
-    }
+def fetch_crypto() -> dict:
 
-    for coin_id, name in COINS.items():
-        payload = get_json(f"{BASE_URL}/tickers/{coin_id}")
+    response = requests.get(
+        URL,
+        params={
+            "quotes": "USD",
+        },
+        timeout=30,
+    )
 
-        result["coins"][name] = {
-            "id": coin_id,
-            "symbol": payload.get("symbol"),
-            "name": payload.get("name"),
-            "rank": payload.get("rank"),
-            "price_usd": payload.get("quotes", {})
-            .get("USD", {})
-            .get("price"),
-            "market_cap_usd": payload.get("quotes", {})
-            .get("USD", {})
-            .get("market_cap"),
-            "volume_24h_usd": payload.get("quotes", {})
-            .get("USD", {})
-            .get("volume_24h"),
-            "change_1h_pct": payload.get("quotes", {})
-            .get("USD", {})
-            .get("percent_change_1h"),
-            "change_24h_pct": payload.get("quotes", {})
-            .get("USD", {})
-            .get("percent_change_24h"),
-            "change_7d_pct": payload.get("quotes", {})
-            .get("USD", {})
-            .get("percent_change_7d"),
+    response.raise_for_status()
+
+    data = response.json()
+
+    selected = {}
+
+    for coin in data:
+
+        if coin["id"] not in COINS:
+            continue
+
+        usd = coin["quotes"]["USD"]
+
+        selected[coin["id"]] = {
+            "id": coin["id"],
+            "name": coin["name"],
+            "symbol": coin["symbol"],
+            "rank": coin["rank"],
+            "price_usd": usd["price"],
+            "market_cap_usd": usd["market_cap"],
+            "volume_24h_usd": usd["volume_24h"],
+            "change_24h_pct": usd["percent_change_24h"],
+            "change_7d_pct": usd["percent_change_7d"],
         }
 
-    result["global"] = get_json(f"{BASE_URL}/global")
+    if not selected:
+        raise RuntimeError(
+            "Crypto API returned no selected assets"
+        )
 
-    return result
+    return {
+        "source": "coinpaprika",
+        "coins": selected,
+    }

@@ -1,7 +1,7 @@
-from .crypto import fetch_crypto
-from .forex import fetch_forex
-from .macro import fetch_macro
-from .weather import fetch_weather
+from src.collectors.crypto import fetch_crypto
+from src.collectors.forex import fetch_forex
+from src.collectors.macro import fetch_macro
+from src.collectors.weather import fetch_weather
 
 __all__ = [
     "fetch_crypto",
