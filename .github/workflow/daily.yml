@@ -1,9 +1,16 @@
 name: Daily Intelligence Pipeline
 
 on:
+  
   schedule:
-    # 20:00 Pakistan Standard Time (UTC+5)
-    # GitHub Actions schedules are UTC.
+
+    # 8 AM PKT
+    - cron: "0 3 * * *"
+
+    # 2 PM PKT
+    - cron: "0 9 * * *"
+
+    # 8 PM PKT
     - cron: "0 15 * * *"
 
   workflow_dispatch:
@@ -13,16 +20,19 @@ permissions:
   issues: write
   pull-requests: write
 
+# Prevent two daily pipelines from running simultaneously.
 concurrency:
   group: daily-intelligence-pipeline
   cancel-in-progress: false
 
 jobs:
+
   collect:
     name: Collect and publish daily data
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -33,6 +43,16 @@ jobs:
         run: |
           git config user.name "rankistan-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Create daily branch
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+
+          BRANCH="automation/daily/${DATE}"
+
+          echo "Creating branch: $BRANCH"
+
+          git checkout -B "$BRANCH"
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -51,41 +71,63 @@ jobs:
 
       - name: Run daily pipeline
         run: |
-          cd src
-          python daily_pipeline.py
+          python src/daily_pipeline.py
 
-      - name: Push daily commits
+      - name: Validate generated data
+        run: |
+          pytest -q
+
+      - name: Show daily commits
+        run: |
+          echo "=========================================="
+          echo "Generated commits:"
+          echo "=========================================="
+
+          git log \
+            --oneline \
+            --decorate \
+            -15
+
+      - name: Push daily branch
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+
           DATE=$(date -u +%Y-%m-%d)
+
           BRANCH="automation/daily/${DATE}"
 
-          git checkout -B "$BRANCH"
+          echo "Pushing $BRANCH"
 
           git push \
-            --force-with-lease \
-            origin "$BRANCH"
+            --set-upstream \
+            origin \
+            "$BRANCH"
 
       - name: Create pull request
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+
           DATE=$(date -u +%Y-%m-%d)
+
           BRANCH="automation/daily/${DATE}"
 
           EXISTING=$(gh pr list \
             --head "$BRANCH" \
             --base main \
+            --state open \
             --json number \
             --jq 'length')
 
           if [ "$EXISTING" -eq 0 ]; then
+
             gh pr create \
               --base main \
               --head "$BRANCH" \
               --title "data: daily intelligence snapshot — ${DATE}" \
               --body "$(cat <<EOF
+
           ## Daily Intelligence Pipeline
 
           Automated data collection for **${DATE}**.
@@ -99,7 +141,7 @@ jobs:
 
           ### Generated
 
-          - raw cryptocurrency data
+          - cryptocurrency snapshot
           - FX snapshot
           - weather snapshot
           - macroeconomic snapshot
@@ -107,34 +149,41 @@ jobs:
           - FX features
           - weather features
           - combined feature set
-          - daily intelligence report
+          - intelligence report
           - pipeline metadata
 
-          All data was fetched and validated automatically.
+          ### Validation
 
-          This PR is intentionally kept separate so the generated daily
-          dataset can be reviewed before merging.
+          Automated tests passed before and after data generation.
+
           EOF
           )"
+
           else
-            echo "PR already exists."
+
+            echo "An open PR already exists for ${DATE}."
+
           fi
 
       - name: Create data quality issue
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+
           DATE=$(date -u +%Y-%m-%d)
 
           EXISTING=$(gh issue list \
             --search "\"Daily data quality review — ${DATE}\" in:title" \
+            --state open \
             --json number \
             --jq 'length')
 
           if [ "$EXISTING" -eq 0 ]; then
+
             gh issue create \
               --title "Daily data quality review — ${DATE}" \
               --body "$(cat <<EOF
+
           # Daily Data Quality Review
 
           Automated snapshot generated for **${DATE}**.
@@ -149,10 +198,18 @@ jobs:
           - [ ] Feature calculations valid
           - [ ] Report generated successfully
 
-          This issue is generated for traceability of the daily
-          data-engineering pipeline.
+          ## Sources
+
+          - CoinPaprika
+          - Frankfurter
+          - Open-Meteo
+          - World Bank
+
           EOF
           )"
+
           else
-            echo "Issue already exists."
+
+            echo "Issue already exists for ${DATE}."
+
           fi
