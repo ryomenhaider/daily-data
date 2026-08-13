@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import csv
 import json
 import subprocess
 import sys
@@ -24,14 +23,17 @@ from features import (
 
 ROOT = Path(__file__).resolve().parents[1]
 
-TODAY = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-TIMESTAMP = datetime.now(timezone.utc).isoformat()
+NOW = datetime.now(timezone.utc)
 
-DATA_DIR = ROOT / "data" / TODAY
-REPORT_DIR = ROOT / "reports"
+DATE = NOW.strftime("%Y-%m-%d")
+RUN_ID = NOW.strftime("%Y-%m-%d-%H-%M-%S")
+
+DATA_DIR = ROOT / "data" / NOW.strftime("%Y") / NOW.strftime("%m") / NOW.strftime("%d") / RUN_ID
 
 RAW_DIR = DATA_DIR / "raw"
 FEATURE_DIR = DATA_DIR / "features"
+
+REPORT_DIR = ROOT / "reports" / NOW.strftime("%Y") / NOW.strftime("%m") / NOW.strftime("%d")
 
 
 def run(command: list[str]) -> str:
@@ -47,6 +49,7 @@ def run(command: list[str]) -> str:
     if result.returncode != 0:
         print(result.stdout)
         print(result.stderr, file=sys.stderr)
+
         raise RuntimeError(
             f"Command failed: {' '.join(command)}"
         )
@@ -55,7 +58,10 @@ def run(command: list[str]) -> str:
 
 
 def write_json(path: Path, payload: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
+    path.parent.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
 
     path.write_text(
         json.dumps(
@@ -67,23 +73,46 @@ def write_json(path: Path, payload: Any) -> None:
     )
 
 
-def commit(message: str, paths: list[str]) -> None:
-    run(["git", "add", *paths])
+def commit(
+    message: str,
+    paths: list[str],
+) -> None:
+
+    run([
+        "git",
+        "add",
+        *paths,
+    ])
 
     result = subprocess.run(
-        ["git", "diff", "--cached", "--quiet"],
+        [
+            "git",
+            "diff",
+            "--cached",
+            "--quiet",
+        ],
         cwd=ROOT,
     )
 
+    # No staged changes.
     if result.returncode == 0:
-        print(f"Skipping empty stage: {message}")
+        print(
+            f"Skipping empty commit: {message}"
+        )
         return
 
-    run(["git", "commit", "-m", message])
+    run([
+        "git",
+        "commit",
+        "-m",
+        message,
+    ])
 
 
 def validate_json(path: Path) -> None:
-    with path.open(encoding="utf-8") as file:
+    with path.open(
+        encoding="utf-8"
+    ) as file:
         json.load(file)
 
 
@@ -97,14 +126,20 @@ def generate_report(
     weather_stats: dict[str, Any],
 ) -> Path:
 
-    REPORT_DIR.mkdir(parents=True, exist_ok=True)
+    REPORT_DIR.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
 
-    path = REPORT_DIR / f"{TODAY}.md"
+    path = (
+        REPORT_DIR /
+        f"{RUN_ID}.md"
+    )
 
     lines = [
-        f"# Daily Intelligence Report — {TODAY}",
+        f"# Intelligence Report — {RUN_ID}",
         "",
-        f"Generated: `{TIMESTAMP}`",
+        f"Generated: `{NOW.isoformat()}`",
         "",
         "## Cryptocurrency",
         "",
@@ -114,7 +149,7 @@ def generate_report(
             f"${crypto_stats['total_market_cap_usd']:,.0f}"
         ),
         (
-            f"- 24h volume: "
+            f"- Combined 24h volume: "
             f"${crypto_stats['total_volume_24h_usd']:,.0f}"
         ),
         (
@@ -139,6 +174,7 @@ def generate_report(
     ]
 
     for coin in crypto["coins"].values():
+
         lines.append(
             "| "
             f"{coin['symbol']} | "
@@ -178,10 +214,15 @@ def generate_report(
     ]
 
     for country, indicators in macro["countries"].items():
-        lines.append(f"### {country}")
+
+        lines.append(
+            f"### {country}"
+        )
+
         lines.append("")
 
         for name, value in indicators.items():
+
             lines.append(
                 f"- **{name}**: "
                 f"{value.get('value')} "
@@ -198,7 +239,7 @@ def generate_report(
         "- Open-Meteo",
         "- World Bank",
         "",
-        "This report is generated automatically by the daily pipeline.",
+        f"Run ID: `{RUN_ID}`",
     ]
 
     path.write_text(
@@ -210,94 +251,163 @@ def generate_report(
 
 
 def main() -> None:
-    print("=" * 60)
-    print(f"Daily Pipeline — {TODAY}")
-    print("=" * 60)
 
-    RAW_DIR.mkdir(parents=True, exist_ok=True)
-    FEATURE_DIR.mkdir(parents=True, exist_ok=True)
+    print("=" * 70)
+    print("DAILY INTELLIGENCE PIPELINE")
+    print("=" * 70)
 
-    # ------------------------------------------------------------------
-    # 1. Crypto
-    # ------------------------------------------------------------------
+    print(f"Date:   {DATE}")
+    print(f"Run ID: {RUN_ID}")
+    print(f"Data:   {DATA_DIR}")
 
-    print("\n[1/10] Collecting cryptocurrency data")
+    RAW_DIR.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    FEATURE_DIR.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
+    # ================================================================
+    # 1. CRYPTO
+    # ================================================================
+
+    print("\n[1/10] Cryptocurrency")
 
     crypto = fetch_crypto()
 
-    crypto_path = RAW_DIR / "crypto.json"
-
-    write_json(crypto_path, crypto)
-    validate_json(crypto_path)
-
-    commit(
-        f"data: add crypto snapshot for {TODAY}",
-        [str(crypto_path.relative_to(ROOT))],
+    crypto_path = (
+        RAW_DIR /
+        "crypto.json"
     )
 
-    # ------------------------------------------------------------------
-    # 2. Forex
-    # ------------------------------------------------------------------
+    write_json(
+        crypto_path,
+        crypto,
+    )
 
-    print("\n[2/10] Collecting FX data")
+    validate_json(
+        crypto_path
+    )
+
+    commit(
+        f"data: add crypto snapshot {RUN_ID}",
+        [
+            str(
+                crypto_path.relative_to(ROOT)
+            )
+        ],
+    )
+
+    # ================================================================
+    # 2. FOREX
+    # ================================================================
+
+    print("\n[2/10] Foreign exchange")
 
     forex = fetch_forex()
 
-    forex_path = RAW_DIR / "forex.json"
-
-    write_json(forex_path, forex)
-    validate_json(forex_path)
-
-    commit(
-        f"data: add forex snapshot for {TODAY}",
-        [str(forex_path.relative_to(ROOT))],
+    forex_path = (
+        RAW_DIR /
+        "forex.json"
     )
 
-    # ------------------------------------------------------------------
-    # 3. Weather
-    # ------------------------------------------------------------------
+    write_json(
+        forex_path,
+        forex,
+    )
 
-    print("\n[3/10] Collecting weather data")
+    validate_json(
+        forex_path
+    )
+
+    commit(
+        f"data: add forex snapshot {RUN_ID}",
+        [
+            str(
+                forex_path.relative_to(ROOT)
+            )
+        ],
+    )
+
+    # ================================================================
+    # 3. WEATHER
+    # ================================================================
+
+    print("\n[3/10] Weather")
 
     weather = fetch_weather()
 
-    weather_path = RAW_DIR / "weather.json"
-
-    write_json(weather_path, weather)
-    validate_json(weather_path)
-
-    commit(
-        f"data: add weather snapshot for {TODAY}",
-        [str(weather_path.relative_to(ROOT))],
+    weather_path = (
+        RAW_DIR /
+        "weather.json"
     )
 
-    # ------------------------------------------------------------------
-    # 4. Macro
-    # ------------------------------------------------------------------
+    write_json(
+        weather_path,
+        weather,
+    )
 
-    print("\n[4/10] Collecting macroeconomic data")
+    validate_json(
+        weather_path
+    )
+
+    commit(
+        f"data: add weather snapshot {RUN_ID}",
+        [
+            str(
+                weather_path.relative_to(ROOT)
+            )
+        ],
+    )
+
+    # ================================================================
+    # 4. MACRO
+    # ================================================================
+
+    print("\n[4/10] Macroeconomics")
 
     macro = fetch_macro()
 
-    macro_path = RAW_DIR / "macro.json"
-
-    write_json(macro_path, macro)
-    validate_json(macro_path)
-
-    commit(
-        f"data: add macro snapshot for {TODAY}",
-        [str(macro_path.relative_to(ROOT))],
+    macro_path = (
+        RAW_DIR /
+        "macro.json"
     )
 
-    # ------------------------------------------------------------------
-    # 5. Crypto features
-    # ------------------------------------------------------------------
+    write_json(
+        macro_path,
+        macro,
+    )
 
-    print("\n[5/10] Engineering crypto features")
+    validate_json(
+        macro_path
+    )
 
-    crypto_stats = crypto_features(crypto)
+    commit(
+        f"data: add macro snapshot {RUN_ID}",
+        [
+            str(
+                macro_path.relative_to(ROOT)
+            )
+        ],
+    )
 
-    crypto_feature_path = FEATURE_DIR / "crypto.json"
+    # ================================================================
+    # 5. CRYPTO FEATURES
+    # ================================================================
+
+    print("\n[5/10] Crypto features")
+
+    crypto_stats = crypto_features(
+        crypto
+    )
+
+    crypto_feature_path = (
+        FEATURE_DIR /
+        "crypto.json"
+    )
 
     write_json(
         crypto_feature_path,
@@ -305,19 +415,28 @@ def main() -> None:
     )
 
     commit(
-        f"feat: engineer crypto features for {TODAY}",
-        [str(crypto_feature_path.relative_to(ROOT))],
+        f"feat: engineer crypto features {RUN_ID}",
+        [
+            str(
+                crypto_feature_path.relative_to(ROOT)
+            )
+        ],
     )
 
-    # ------------------------------------------------------------------
-    # 6. FX features
-    # ------------------------------------------------------------------
+    # ================================================================
+    # 6. FOREX FEATURES
+    # ================================================================
 
-    print("\n[6/10] Engineering FX features")
+    print("\n[6/10] Forex features")
 
-    forex_stats = forex_features(forex)
+    forex_stats = forex_features(
+        forex
+    )
 
-    forex_feature_path = FEATURE_DIR / "forex.json"
+    forex_feature_path = (
+        FEATURE_DIR /
+        "forex.json"
+    )
 
     write_json(
         forex_feature_path,
@@ -325,19 +444,28 @@ def main() -> None:
     )
 
     commit(
-        f"feat: engineer forex features for {TODAY}",
-        [str(forex_feature_path.relative_to(ROOT))],
+        f"feat: engineer forex features {RUN_ID}",
+        [
+            str(
+                forex_feature_path.relative_to(ROOT)
+            )
+        ],
     )
 
-    # ------------------------------------------------------------------
-    # 7. Weather features
-    # ------------------------------------------------------------------
+    # ================================================================
+    # 7. WEATHER FEATURES
+    # ================================================================
 
-    print("\n[7/10] Engineering weather features")
+    print("\n[7/10] Weather features")
 
-    weather_stats = weather_features(weather)
+    weather_stats = weather_features(
+        weather
+    )
 
-    weather_feature_path = FEATURE_DIR / "weather.json"
+    weather_feature_path = (
+        FEATURE_DIR /
+        "weather.json"
+    )
 
     write_json(
         weather_feature_path,
@@ -345,37 +473,52 @@ def main() -> None:
     )
 
     commit(
-        f"feat: engineer weather features for {TODAY}",
-        [str(weather_feature_path.relative_to(ROOT))],
+        f"feat: engineer weather features {RUN_ID}",
+        [
+            str(
+                weather_feature_path.relative_to(ROOT)
+            )
+        ],
     )
 
-    # ------------------------------------------------------------------
-    # 8. Combined feature dataset
-    # ------------------------------------------------------------------
+    # ================================================================
+    # 8. COMBINED FEATURES
+    # ================================================================
 
-    print("\n[8/10] Building combined feature dataset")
+    print("\n[8/10] Combined feature set")
 
     combined = {
-        "date": TODAY,
+        "run_id": RUN_ID,
+        "timestamp": NOW.isoformat(),
         "crypto": crypto_stats,
         "forex": forex_stats,
         "weather": weather_stats,
     }
 
-    combined_path = FEATURE_DIR / "daily.json"
-
-    write_json(combined_path, combined)
-
-    commit(
-        f"feat: add combined daily feature set for {TODAY}",
-        [str(combined_path.relative_to(ROOT))],
+    combined_path = (
+        FEATURE_DIR /
+        "daily.json"
     )
 
-    # ------------------------------------------------------------------
-    # 9. Report
-    # ------------------------------------------------------------------
+    write_json(
+        combined_path,
+        combined,
+    )
 
-    print("\n[9/10] Generating intelligence report")
+    commit(
+        f"feat: add combined feature set {RUN_ID}",
+        [
+            str(
+                combined_path.relative_to(ROOT)
+            )
+        ],
+    )
+
+    # ================================================================
+    # 9. REPORT
+    # ================================================================
+
+    print("\n[9/10] Intelligence report")
 
     report_path = generate_report(
         crypto,
@@ -388,33 +531,55 @@ def main() -> None:
     )
 
     commit(
-        f"docs: publish daily intelligence report for {TODAY}",
-        [str(report_path.relative_to(ROOT))],
+        f"docs: publish intelligence report {RUN_ID}",
+        [
+            str(
+                report_path.relative_to(ROOT)
+            )
+        ],
     )
-    print("\n[10/10] Writing pipeline metadata")
+
+    # ================================================================
+    # 10. METADATA
+    # ================================================================
+
+    print("\n[10/10] Pipeline metadata")
 
     metadata = {
-        "date": TODAY,
-        "generated_at": TIMESTAMP,
+        "run_id": RUN_ID,
+        "timestamp": NOW.isoformat(),
+        "date": DATE,
+        "status": "success",
         "sources": [
             "coinpaprika",
             "frankfurter",
             "open-meteo",
             "world-bank",
         ],
-        "status": "success",
     }
 
-    metadata_path = DATA_DIR / "run.json"
-
-    write_json(metadata_path, metadata)
-
-    commit(
-        f"chore: record pipeline run for {TODAY}",
-        [str(metadata_path.relative_to(ROOT))],
+    metadata_path = (
+        DATA_DIR /
+        "run.json"
     )
 
-    print("\nPipeline completed successfully.")
+    write_json(
+        metadata_path,
+        metadata,
+    )
+
+    commit(
+        f"chore: record pipeline run {RUN_ID}",
+        [
+            str(
+                metadata_path.relative_to(ROOT)
+            )
+        ],
+    )
+
+    print("\n" + "=" * 70)
+    print("PIPELINE COMPLETED")
+    print("=" * 70)
 
 
 if __name__ == "__main__":
