@@ -1,3 +1,5 @@
+from math import isclose
+
 from src.features.market import (
     crypto_features,
     forex_features,
@@ -47,11 +49,17 @@ def test_forex_features_dict():
 
     result = forex_features(data)
 
+    expected_mean = (0.9 + 0.8 + 150) / 3
+
     assert result["currency_count"] == 3
     assert result["min_usd_rate"] == 0.8
     assert result["max_usd_rate"] == 150
-    assert result["mean_usd_rate"] == (
-        (0.9 + 0.8 + 150) / 3
+
+    assert isclose(
+        result["mean_usd_rate"],
+        expected_mean,
+        rel_tol=1e-12,
+        abs_tol=1e-12,
     )
 
 
@@ -76,9 +84,18 @@ def test_forex_features_list():
 
     result = forex_features(data)
 
+    expected_mean = (0.9 + 0.8 + 150) / 3
+
     assert result["currency_count"] == 3
     assert result["min_usd_rate"] == 0.8
     assert result["max_usd_rate"] == 150
+
+    assert isclose(
+        result["mean_usd_rate"],
+        expected_mean,
+        rel_tol=1e-12,
+        abs_tol=1e-12,
+    )
 
 
 def test_weather_features():
