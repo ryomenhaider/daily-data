@@ -242,16 +242,36 @@ def weather_features(data: dict[str, Any]) -> dict[str, Any]:
                 f"Invalid weather data for {name!r}."
             )
 
+        temp_raw = location.get("temperature_c")
+        # Skip locations with missing temperature values instead of
+        # raising immediately. This lets the pipeline compute stats
+        # from available locations while still validating numeric
+        # values when present.
+        if temp_raw is None:
+            continue
+
         temperatures.append(
             _number(
-                location.get("temperature_c"),
+                temp_raw,
                 f"{name}.temperature_c",
             )
         )
+
+    # If no valid temperature readings are available, return NaN
+    # for numeric stats so the report can still be generated.
+    if not temperatures:
+        nan = float("nan")
+
+        return {
+            "location_count": len(locations),
+            "mean_temperature_c": nan,
+            "min_temperature_c": nan,
+            "max_temperature_c": nan,
+        }
 
     return {
         "location_count": len(temperatures),
         "mean_temperature_c": mean(temperatures),
         "min_temperature_c": min(temperatures),
         "max_temperature_c": max(temperatures),
-        }
+    }
