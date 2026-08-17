@@ -160,8 +160,12 @@ jobs:
 
       - name: Push run branch
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
+          # Use a Personal Access Token (GH_PAT) stored in repository secrets
+          # so the action can create branches and PRs even when the
+          # default GITHUB_TOKEN lacks the required permissions.
+          git remote set-url origin "https://x-access-token:${GH_PAT}@github.com/${{ github.repository }}.git"
           git push \
             --set-upstream \
             origin \
@@ -173,10 +177,12 @@ jobs:
 
       - name: Create pull request
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           RUN_ID="${{ steps.run.outputs.run_id }}"
           BRANCH="${{ steps.run.outputs.branch }}"
+          # Authenticate gh with the PAT for CLI operations
+          gh auth login --with-token <<< "${GH_PAT}"
 
           gh pr create \
             --repo "${{ github.repository }}" \
