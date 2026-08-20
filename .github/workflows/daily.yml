@@ -61,11 +61,16 @@ jobs:
       # ============================================================
 
       - name: Configure Git
+        env:
+          BOT_NAME: ${{ vars.BOT_NAME }}
+          BOT_EMAIL: ${{ vars.BOT_EMAIL }}
         run: |
-          # Use the triggering user's identity so contributions count
-          # toward their GitHub profile, not the github-actions bot.
-          git config user.name "${{ github.actor }}"
-          git config user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
+          # Use the account's verified email so commits count toward
+          # the contribution graph. Noreply addresses (actor_id+actor)
+          # resolve for display but are NOT counted as contributions.
+          # Override via repo variables BOT_NAME / BOT_EMAIL if needed.
+          git config user.name "${BOT_NAME:-ryomenhaider}"
+          git config user.email "${BOT_EMAIL:-onlinep680@gmail.com}"
 
       # ============================================================
       # GENERATE UNIQUE RUN ID
