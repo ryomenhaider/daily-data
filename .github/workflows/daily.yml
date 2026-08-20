@@ -243,9 +243,7 @@ jobs:
           # Merge into the default branch so the generated commits
           # count toward the contribution graph.
           gh pr merge \
-            --repo "${{ github.repository }}" \
-            --base main \
-            --head "${{ steps.run.outputs.branch }}" \
+            "${{ steps.run.outputs.branch }}" \
             --squash \
             --delete-branch
 
