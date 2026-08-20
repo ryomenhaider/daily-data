@@ -62,8 +62,10 @@ jobs:
 
       - name: Configure Git
         run: |
-          git config user.name "rankistan-bot"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Use the triggering user's identity so contributions count
+          # toward their GitHub profile, not the github-actions bot.
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
 
       # ============================================================
       # GENERATE UNIQUE RUN ID
@@ -229,6 +231,23 @@ jobs:
           - Tests executed after collection
 
           This PR was generated automatically by GitHub Actions."
+
+      # ============================================================
+      # MERGE PULL REQUEST
+      # ============================================================
+
+      - name: Merge pull request
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: |
+          # Merge into the default branch so the generated commits
+          # count toward the contribution graph.
+          gh pr merge \
+            --repo "${{ github.repository }}" \
+            --base main \
+            --head "${{ steps.run.outputs.branch }}" \
+            --squash \
+            --delete-branch
 
       # ============================================================
       # CREATE DATA QUALITY ISSUE
