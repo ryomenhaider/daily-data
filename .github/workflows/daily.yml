@@ -240,11 +240,12 @@ jobs:
         env:
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |
-          # Merge into the default branch so the generated commits
-          # count toward the contribution graph.
+          # Merge into the default branch so all 10 generated commits
+          # count toward the contribution graph. A squash merge would
+          # collapse them into one commit and abandon the rest.
           gh pr merge \
             "${{ steps.run.outputs.branch }}" \
-            --squash \
+            --merge \
             --delete-branch
 
       # ============================================================
