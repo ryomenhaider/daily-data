@@ -1,0 +1,26 @@
+{
+  "run_id": "2026-08-30-18-29-36",
+  "timestamp": "2026-08-30T18:29:36.758813+00:00",
+  "crypto": {
+    "asset_count": 9,
+    "total_market_cap_usd": 2162569631499.0,
+    "total_volume_24h_usd": 24424459428.983383,
+    "mean_change_24h_pct": 1.1933333410157099,
+    "best_24h_asset": "ETH",
+    "best_24h_change_pct": 1.809999942779541,
+    "worst_24h_asset": "DOGE",
+    "worst_24h_change_pct": 0.6000000238418579
+  },
+  "forex": {
+    "currency_count": 9,
+    "mean_usd_rate": 35.02339888888889,
+    "min_usd_rate": 0.73624,
+    "max_usd_rate": 159.68
+  },
+  "weather": {
+    "location_count": 4,
+    "mean_temperature_c": NaN,
+    "min_temperature_c": NaN,
+    "max_temperature_c": NaN
+  }
+}
