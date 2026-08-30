@@ -1,0 +1,65 @@
+{
+  "source": "world-bank",
+  "countries": {
+    "PAK": {
+      "gdp_growth": {
+        "country": "PAK",
+        "indicator": "NY.GDP.MKTP.KD.ZG",
+        "value": 3.69842668749033,
+        "year": "2025"
+      },
+      "inflation": {
+        "country": "PAK",
+        "indicator": "FP.CPI.TOTL.ZG",
+        "value": 3.54555214890893,
+        "year": "2025"
+      },
+      "unemployment": {
+        "country": "PAK",
+        "indicator": "SL.UEM.TOTL.ZS",
+        "value": 5.42,
+        "year": "2025"
+      }
+    },
+    "USA": {
+      "gdp_growth": {
+        "country": "USA",
+        "indicator": "NY.GDP.MKTP.KD.ZG",
+        "value": 2.16138195623856,
+        "year": "2025"
+      },
+      "inflation": {
+        "country": "USA",
+        "indicator": "FP.CPI.TOTL.ZG",
+        "value": 2.94952520485207,
+        "year": "2024"
+      },
+      "unemployment": {
+        "country": "USA",
+        "indicator": "SL.UEM.TOTL.ZS",
+        "value": 4.198,
+        "year": "2025"
+      }
+    },
+    "CHN": {
+      "gdp_growth": {
+        "country": "CHN",
+        "indicator": "NY.GDP.MKTP.KD.ZG",
+        "value": 4.95994886240992,
+        "year": "2025"
+      },
+      "inflation": {
+        "country": "CHN",
+        "indicator": "FP.CPI.TOTL.ZG",
+        "value": 0.0595646916565403,
+        "year": "2025"
+      },
+      "unemployment": {
+        "country": "CHN",
+        "indicator": "SL.UEM.TOTL.ZS",
+        "value": 4.615,
+        "year": "2025"
+      }
+    }
+  }
+}
