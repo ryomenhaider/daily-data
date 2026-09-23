@@ -1,0 +1,104 @@
+{
+  "source": "coinpaprika",
+  "coins": {
+    "btc-bitcoin": {
+      "id": "btc-bitcoin",
+      "name": "Bitcoin",
+      "symbol": "BTC",
+      "rank": 1,
+      "price_usd": 84200.03822806399,
+      "market_cap_usd": 1691449015742,
+      "volume_24h_usd": 32226878777.602116,
+      "change_24h_pct": -2.4200000762939453,
+      "change_7d_pct": 10.729999542236328
+    },
+    "eth-ethereum": {
+      "id": "eth-ethereum",
+      "name": "Ethereum",
+      "symbol": "ETH",
+      "rank": 2,
+      "price_usd": 2664.247135844619,
+      "market_cap_usd": 325233687663,
+      "volume_24h_usd": 13393764237.172544,
+      "change_24h_pct": -3.1600000858306885,
+      "change_7d_pct": 10.630000114440918
+    },
+    "bnb-binance-coin": {
+      "id": "bnb-binance-coin",
+      "name": "BNB",
+      "symbol": "BNB",
+      "rank": 4,
+      "price_usd": 766.6909500891007,
+      "market_cap_usd": 102092542379,
+      "volume_24h_usd": 1063121644.8019902,
+      "change_24h_pct": -2.5899999141693115,
+      "change_7d_pct": 6.579999923706055
+    },
+    "xrp-xrp": {
+      "id": "xrp-xrp",
+      "name": "XRP",
+      "symbol": "XRP",
+      "rank": 5,
+      "price_usd": 1.4944883070618973,
+      "market_cap_usd": 93972243876,
+      "volume_24h_usd": 5054078921.05683,
+      "change_24h_pct": -5.699999809265137,
+      "change_7d_pct": 14.850000381469727
+    },
+    "sol-solana": {
+      "id": "sol-solana",
+      "name": "Solana",
+      "symbol": "SOL",
+      "rank": 7,
+      "price_usd": 114.22367877900291,
+      "market_cap_usd": 67115311363,
+      "volume_24h_usd": 3778384506.2152653,
+      "change_24h_pct": -3.200000047683716,
+      "change_7d_pct": 16.149999618530273
+    },
+    "doge-dogecoin": {
+      "id": "doge-dogecoin",
+      "name": "Dogecoin",
+      "symbol": "DOGE",
+      "rank": 12,
+      "price_usd": 0.09201239176718284,
+      "market_cap_usd": 15774211839,
+      "volume_24h_usd": 1836075412.3097863,
+      "change_24h_pct": -7.869999885559082,
+      "change_7d_pct": 14.399999618530273
+    },
+    "ada-cardano": {
+      "id": "ada-cardano",
+      "name": "Cardano",
+      "symbol": "ADA",
+      "rank": 18,
+      "price_usd": 0.23789942370342249,
+      "market_cap_usd": 9252568332,
+      "volume_24h_usd": 649895103.7233571,
+      "change_24h_pct": -5.679999828338623,
+      "change_7d_pct": 22.459999084472656
+    },
+    "link-chainlink": {
+      "id": "link-chainlink",
+      "name": "Chainlink",
+      "symbol": "LINK",
+      "rank": 19,
+      "price_usd": 12.23289175963021,
+      "market_cap_usd": 9151425958,
+      "volume_24h_usd": 554770342.8861557,
+      "change_24h_pct": -5.690000057220459,
+      "change_7d_pct": 11.800000190734863
+    },
+    "avax-avalanche": {
+      "id": "avax-avalanche",
+      "name": "Avalanche",
+      "symbol": "AVAX",
+      "rank": 33,
+      "price_usd": 10.257367406954689,
+      "market_cap_usd": 4331432745,
+      "volume_24h_usd": 656637670.4688983,
+      "change_24h_pct": -6.75,
+      "change_7d_pct": 39.7400016784668
+    }
+  }
+}
