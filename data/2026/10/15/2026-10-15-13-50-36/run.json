@@ -1,0 +1,12 @@
+{
+  "run_id": "2026-10-15-13-50-36",
+  "timestamp": "2026-10-15T13:50:36.558424+00:00",
+  "date": "2026-10-15",
+  "status": "success",
+  "sources": [
+    "coinpaprika",
+    "frankfurter",
+    "open-meteo",
+    "world-bank"
+  ]
+}
