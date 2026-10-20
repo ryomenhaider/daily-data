@@ -1,0 +1,57 @@
+{
+  "source": "open-meteo",
+  "locations": {
+    "lahore": {
+      "latitude": 31.5204,
+      "longitude": 74.3587,
+      "current": {
+        "time": "2026-10-20T14:00",
+        "interval": 900,
+        "temperature_2m": 25.1,
+        "relative_humidity_2m": 69,
+        "apparent_temperature": 27.8,
+        "precipitation": 0.0,
+        "wind_speed_10m": 5.2
+      }
+    },
+    "islamabad": {
+      "latitude": 33.6844,
+      "longitude": 73.0479,
+      "current": {
+        "time": "2026-10-20T14:00",
+        "interval": 900,
+        "temperature_2m": 20.8,
+        "relative_humidity_2m": 63,
+        "apparent_temperature": 20.9,
+        "precipitation": 0.0,
+        "wind_speed_10m": 6.4
+      }
+    },
+    "karachi": {
+      "latitude": 24.8607,
+      "longitude": 67.0011,
+      "current": {
+        "time": "2026-10-20T14:00",
+        "interval": 900,
+        "temperature_2m": 30.0,
+        "relative_humidity_2m": 45,
+        "apparent_temperature": 31.6,
+        "precipitation": 0.0,
+        "wind_speed_10m": 5.6
+      }
+    },
+    "new_york": {
+      "latitude": 40.7128,
+      "longitude": -74.006,
+      "current": {
+        "time": "2026-10-20T14:00",
+        "interval": 900,
+        "temperature_2m": 14.2,
+        "relative_humidity_2m": 61,
+        "apparent_temperature": 10.2,
+        "precipitation": 0.0,
+        "wind_speed_10m": 21.8
+      }
+    }
+  }
+}
