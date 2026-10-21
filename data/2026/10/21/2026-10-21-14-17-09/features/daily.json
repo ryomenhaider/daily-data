@@ -1,0 +1,26 @@
+{
+  "run_id": "2026-10-21-14-17-09",
+  "timestamp": "2026-10-21T14:17:09.817168+00:00",
+  "crypto": {
+    "asset_count": 10,
+    "total_market_cap_usd": 2268807096046.0,
+    "total_volume_24h_usd": 36218159266.24399,
+    "mean_change_24h_pct": 0.4260000094771385,
+    "best_24h_asset": "XRP",
+    "best_24h_change_pct": 2.4800000190734863,
+    "worst_24h_asset": "AVAX",
+    "worst_24h_change_pct": -1.6299999952316284
+  },
+  "forex": {
+    "currency_count": 9,
+    "mean_usd_rate": 34.87940555555556,
+    "min_usd_rate": 0.74617,
+    "max_usd_rate": 157.88
+  },
+  "weather": {
+    "location_count": 4,
+    "mean_temperature_c": NaN,
+    "min_temperature_c": NaN,
+    "max_temperature_c": NaN
+  }
+}
