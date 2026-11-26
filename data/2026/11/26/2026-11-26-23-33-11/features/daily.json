@@ -1,0 +1,26 @@
+{
+  "run_id": "2026-11-26-23-33-11",
+  "timestamp": "2026-11-26T23:33:11.792443+00:00",
+  "crypto": {
+    "asset_count": 10,
+    "total_market_cap_usd": 1621645039693.0,
+    "total_volume_24h_usd": 21900212272.972668,
+    "mean_change_24h_pct": -0.13399999737739562,
+    "best_24h_asset": "LINK",
+    "best_24h_change_pct": 1.2200000286102295,
+    "worst_24h_asset": "AVAX",
+    "worst_24h_change_pct": -1.4299999475479126
+  },
+  "forex": {
+    "currency_count": 9,
+    "mean_usd_rate": 34.942843333333336,
+    "min_usd_rate": 0.76314,
+    "max_usd_rate": 159.26
+  },
+  "weather": {
+    "location_count": 4,
+    "mean_temperature_c": NaN,
+    "min_temperature_c": NaN,
+    "max_temperature_c": NaN
+  }
+}
