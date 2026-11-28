@@ -1,0 +1,26 @@
+{
+  "run_id": "2026-11-28-11-15-49",
+  "timestamp": "2026-11-28T11:15:49.874458+00:00",
+  "crypto": {
+    "asset_count": 10,
+    "total_market_cap_usd": 1591074288701.0,
+    "total_volume_24h_usd": 27216260046.74853,
+    "mean_change_24h_pct": -4.089000010490418,
+    "best_24h_asset": "BNB",
+    "best_24h_change_pct": -2.609999895095825,
+    "worst_24h_asset": "DOT",
+    "worst_24h_change_pct": -5.329999923706055
+  },
+  "forex": {
+    "currency_count": 9,
+    "mean_usd_rate": 35.04622111111111,
+    "min_usd_rate": 0.76211,
+    "max_usd_rate": 159.54
+  },
+  "weather": {
+    "location_count": 4,
+    "mean_temperature_c": NaN,
+    "min_temperature_c": NaN,
+    "max_temperature_c": NaN
+  }
+}
